@@ -21,12 +21,14 @@ from django.conf.urls.static import static
 from ninja import NinjaAPI
 from apps.rooms.api import router as rooms_router
 from apps.reservations.api import router as reservations_router
+from apps.authentication.api import router as auth_router
 
 api = NinjaAPI(title="Escape Rooms API", version="1.0.0")
 
 # Add routers
 api.add_router("/rooms", rooms_router)
 api.add_router("/reservations", reservations_router)
+api.add_router("/auth", auth_router)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
