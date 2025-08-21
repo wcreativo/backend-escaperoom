@@ -7,15 +7,17 @@ from .base import *
 # Production specific settings
 DEBUG = False
 
-# Security settings
+# Security settings (adjusted for Render)
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_SECONDS = 31536000
 SECURE_REDIRECT_EXEMPT = []
-SECURE_SSL_REDIRECT = True
+# SSL settings - Render handles SSL termination
+SECURE_SSL_REDIRECT = False  # Render handles this
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Production logging
 LOGGING = {
@@ -53,8 +55,10 @@ LOGGING = {
     },
 }
 
-# Production database optimizations
-DATABASES['default']['CONN_MAX_AGE'] = 60
+# Production database optimizations for SQLite
+DATABASES['default']['OPTIONS'] = {
+    'timeout': 20,
+}
 
 # Cache configuration (Redis recommended for production)
 # CACHES = {
