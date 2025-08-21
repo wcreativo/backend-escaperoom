@@ -9,6 +9,7 @@ class Room(models.Model):
     full_description = models.TextField()
     hero_image = models.URLField(max_length=500, blank=True, null=True)
     thumbnail_image = models.URLField(max_length=500, blank=True, null=True)
+    video_url = models.URLField(max_length=500, blank=True, null=True)
     base_price = models.DecimalField(max_digits=6, decimal_places=2, default=30.00)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -34,6 +34,7 @@ class Command(BaseCommand):
                 'base_price': 30.00,
                 'hero_image_url': f'{frontend_url}/images/inquisicion-hero.jpg',
                 'thumbnail_image_url': f'{frontend_url}/images/inquisicion-thumb.jpg',
+                'video_url': f'{frontend_url}/videos/inquisicion_audio.mp4',
             },
             {
                 'name': 'El Purgatorio',
@@ -42,6 +43,7 @@ class Command(BaseCommand):
                 'base_price': 30.00,
                 'hero_image_url': f'{frontend_url}/images/purgatorio-hero.jpg',
                 'thumbnail_image_url': f'{frontend_url}/images/purgatorio-hero.jpg',
+                'video_url': f'{frontend_url}/videos/purgatorio_audio.mp4',
             }
         ]
 
@@ -62,6 +64,9 @@ class Command(BaseCommand):
             
             if room_data.get('thumbnail_image_url'):
                 room.thumbnail_image = room_data['thumbnail_image_url']
+            
+            if room_data.get('video_url'):
+                room.video_url = room_data['video_url']
             
             room.save()
             self.stdout.write(
