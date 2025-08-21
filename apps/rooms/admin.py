@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils import timezone
 from .models import Room, TimeSlot
 
 
@@ -13,7 +14,17 @@ class RoomAdmin(admin.ModelAdmin):
 
 @admin.register(TimeSlot)
 class TimeSlotAdmin(admin.ModelAdmin):
-    list_display = ['room', 'date', 'time', 'status']
+    list_display = ['room', 'get_date_display', 'get_time_display', 'status']
     list_filter = ['status', 'date', 'room']
     search_fields = ['room__name']
     date_hierarchy = 'date'
+    
+    def get_date_display(self, obj):
+        return obj.date.strftime('%d/%m/%Y') if obj.date else '-'
+    get_date_display.short_description = 'Fecha'
+    get_date_display.admin_order_field = 'date'
+    
+    def get_time_display(self, obj):
+        return obj.time.strftime('%H:%M') if obj.time else '-'
+    get_time_display.short_description = 'Hora'
+    get_time_display.admin_order_field = 'time'

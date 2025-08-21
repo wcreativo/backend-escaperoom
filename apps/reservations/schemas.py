@@ -64,6 +64,8 @@ class ReservationSchema(Schema):
     customer_name: str
     customer_email: str
     customer_phone: str
+    date: str
+    time: str
     num_people: int
     total_price: float
     status: str
@@ -77,6 +79,14 @@ class ReservationSchema(Schema):
     @staticmethod
     def resolve_room_name(obj):
         return obj.room.name
+    
+    @staticmethod
+    def resolve_date(obj):
+        return obj.time_slot.date.strftime('%Y-%m-%d') if obj.time_slot else None
+    
+    @staticmethod
+    def resolve_time(obj):
+        return obj.time_slot.time.strftime('%H:%M:%S') if obj.time_slot else None
 
 
 class ReservationUpdateSchema(Schema):
