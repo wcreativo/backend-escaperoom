@@ -139,11 +139,10 @@ CORS_ALLOW_CREDENTIALS = True
 if not DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
 
-# APScheduler settings
+# APScheduler settings - Using memory store for simplicity in production
 SCHEDULER_CONFIG = {
     'apscheduler.jobstores.default': {
-        'type': 'sqlalchemy',
-        'url': 'sqlite:///jobs.sqlite'
+        'type': 'memory'
     },
     'apscheduler.executors.default': {
         'type': 'threadpool',
