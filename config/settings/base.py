@@ -130,14 +130,17 @@ CORS_ALLOW_CREDENTIALS = True
 # APScheduler settings
 SCHEDULER_CONFIG = {
     'apscheduler.jobstores.default': {
-        'class': 'apscheduler.jobstores.sqlalchemy:SQLAlchemyJobStore',
+        'type': 'sqlalchemy',
         'url': 'sqlite:///jobs.sqlite'
     },
     'apscheduler.executors.default': {
-        'class': 'apscheduler.executors.pool:ThreadPoolExecutor',
-        'max_workers': '20'
+        'type': 'threadpool',
+        'max_workers': 20
     },
-    'apscheduler.job_defaults.coalesce': 'false',
-    'apscheduler.job_defaults.max_instances': '3',
+    'apscheduler.job_defaults.coalesce': False,
+    'apscheduler.job_defaults.max_instances': 3,
     'apscheduler.timezone': TIME_ZONE,
 }
+
+# Scheduler mode - set to True when running as dedicated worker
+SCHEDULER_WORKER_MODE = config('SCHEDULER_WORKER_MODE', default=False, cast=bool)
