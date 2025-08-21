@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from datetime import timedelta
 from apps.rooms.models import Room, TimeSlot
 
@@ -24,13 +25,40 @@ class Reservation(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['created_at']),
+            models.Index(fields=['expires_at']),
+            models.Index(fields=['room', 'status']),
+        ]
 
     def __str__(self):
         return f"{self.customer_name} - {self.room.name} - {self.time_slot.date} {self.time_slot.time}"
 
+    def clean(self):
+        """Validate that the time slot is available"""
+        if self.time_slot and self.time_slot.status != 'active':
+            raise ValidationError('The selected time slot is not available.')
+        
+        if self.time_slot and self.time_slot.room != self.room:
+            raise ValidationError('Time slot must belong to the selected room.')
+
     def save(self, *args, **kwargs):
         if not self.expires_at:
             self.expires_at = timezone.now() + timedelta(minutes=30)
+        
+        # Auto-calculate total price if not set
+        if not self.total_price:
+            self.total_price = self.calculate_total_price()
+        
+        # Validate before saving
+        self.full_clean()
+        
+        # Mark time slot as reserved
+        if self.time_slot and self.time_slot.status == 'active':
+            self.time_slot.status = 'reserved'
+            self.time_slot.save()
+        
         super().save(*args, **kwargs)
 
     @property
@@ -44,3 +72,12 @@ class Reservation(models.Model):
         else:
             price_per_person = 25.00
         return self.num_people * price_per_person
+
+    def cancel_reservation(self):
+        """Cancel the reservation and free up the time slot"""
+        if self.status != 'cancelled':
+            self.status = 'cancelled'
+            if self.time_slot:
+                self.time_slot.status = 'active'
+                self.time_slot.save()
+            self.save()

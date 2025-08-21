@@ -16,6 +16,10 @@ class Room(models.Model):
 
     class Meta:
         ordering = ['name']
+        indexes = [
+            models.Index(fields=['is_active']),
+            models.Index(fields=['slug']),
+        ]
 
     def __str__(self):
         return self.name
@@ -41,6 +45,11 @@ class TimeSlot(models.Model):
     class Meta:
         unique_together = ['room', 'date', 'time']
         ordering = ['date', 'time']
+        indexes = [
+            models.Index(fields=['room', 'date']),
+            models.Index(fields=['status']),
+            models.Index(fields=['date', 'time']),
+        ]
 
     def __str__(self):
         return f"{self.room.name} - {self.date} {self.time} ({self.get_status_display()})"
