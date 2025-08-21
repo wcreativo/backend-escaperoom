@@ -8,7 +8,6 @@ from django.core.exceptions import ValidationError
 from .models import Reservation
 from .schemas import ReservationCreateSchema, ReservationSchema
 from apps.rooms.models import Room, TimeSlot
-from apps.authentication.middleware import jwt_auth
 
 router = Router()
 
@@ -82,7 +81,3 @@ def create_reservation(request, payload: ReservationCreateSchema):
         raise HttpError(500, f"Error creating reservation: {str(e)}")
 
 
-@router.get("/admin/", response=List[ReservationSchema], auth=jwt_auth)
-def list_reservations_admin(request):
-    """List all reservations (admin only - requires JWT authentication)"""
-    return Reservation.objects.all().order_by('-created_at')

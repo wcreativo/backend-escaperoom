@@ -1,6 +1,6 @@
 from ninja import Schema
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from pydantic import validator
 import re
 
@@ -77,3 +77,33 @@ class ReservationSchema(Schema):
     @staticmethod
     def resolve_room_name(obj):
         return obj.room.name
+
+
+class ReservationUpdateSchema(Schema):
+    status: str
+    
+    @validator('status')
+    def validate_status(cls, v):
+        valid_statuses = ['pending', 'paid', 'cancelled']
+        if v not in valid_statuses:
+            raise ValueError(f'Status must be one of: {", ".join(valid_statuses)}')
+        return v
+
+
+class ReservationListSchema(Schema):
+    reservations: List[ReservationSchema]
+    total: int
+    page: int
+    per_page: int
+    total_pages: int
+
+
+class ReservationStatsSchema(Schema):
+    total_reservations: int
+    pending_reservations: int
+    paid_reservations: int
+    cancelled_reservations: int
+    total_revenue: float
+    today_reservations: int
+    this_week_reservations: int
+    this_month_reservations: int
