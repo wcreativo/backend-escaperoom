@@ -44,6 +44,11 @@ class Reservation(models.Model):
             raise ValidationError('Time slot must belong to the selected room.')
 
     def save(self, *args, **kwargs):
+        # Only perform full validation and time slot updates for new reservations
+        # or when not using update_fields
+        update_fields = kwargs.get('update_fields')
+        is_new = self._state.adding
+        
         if not self.expires_at:
             self.expires_at = timezone.now() + timedelta(minutes=30)
         
@@ -51,13 +56,15 @@ class Reservation(models.Model):
         if not self.total_price:
             self.total_price = self.calculate_total_price()
         
-        # Validate before saving
-        self.full_clean()
-        
-        # Mark time slot as reserved
-        if self.time_slot and self.time_slot.status == 'active':
-            self.time_slot.status = 'reserved'
-            self.time_slot.save()
+        # Only validate and update time slot for new reservations or full saves
+        if is_new or update_fields is None:
+            # Validate before saving
+            self.full_clean()
+            
+            # Mark time slot as reserved for new reservations
+            if is_new and self.time_slot and self.time_slot.status == 'active':
+                self.time_slot.status = 'reserved'
+                self.time_slot.save()
         
         super().save(*args, **kwargs)
 
@@ -66,7 +73,12 @@ class Reservation(models.Model):
         return timezone.now() > self.expires_at and self.status == 'pending'
 
     def calculate_total_price(self):
-        """Calculate total price based on number of people"""
+        """Calculate total price based on number of people
+        
+        Pricing rules:
+        - 1-3 people: $30 per person
+        - 4+ people: $25 per person
+        """
         if self.num_people <= 3:
             price_per_person = 30.00
         else:
@@ -80,4 +92,5 @@ class Reservation(models.Model):
             if self.time_slot:
                 self.time_slot.status = 'active'
                 self.time_slot.save()
-            self.save()
+            # Use update_fields to avoid triggering full_clean validation
+            self.save(update_fields=['status'])

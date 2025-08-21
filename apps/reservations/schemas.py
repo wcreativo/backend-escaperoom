@@ -1,21 +1,66 @@
 from ninja import Schema
 from datetime import datetime
 from typing import Optional
+from pydantic import validator
+import re
 
 
 class ReservationCreateSchema(Schema):
     room_id: int
-    date: str
-    time: str
+    date: str  # Format: YYYY-MM-DD
+    time: str  # Format: HH:MM
     customer_name: str
     customer_email: str
     customer_phone: str
     num_people: int
+    
+    @validator('customer_name')
+    def validate_customer_name(cls, v):
+        if not v or not v.strip():
+            raise ValueError('Customer name is required')
+        if len(v.strip()) < 2:
+            raise ValueError('Customer name must be at least 2 characters long')
+        if len(v.strip()) > 100:
+            raise ValueError('Customer name cannot exceed 100 characters')
+        return v.strip()
+    
+    @validator('customer_email')
+    def validate_customer_email(cls, v):
+        if not v or not v.strip():
+            raise ValueError('Customer email is required')
+        
+        # Simple email validation regex
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, v.strip()):
+            raise ValueError('Invalid email format')
+        
+        return v.strip().lower()
+    
+    @validator('customer_phone')
+    def validate_customer_phone(cls, v):
+        if not v or not v.strip():
+            raise ValueError('Customer phone is required')
+        # Remove common phone formatting characters
+        cleaned_phone = ''.join(filter(str.isdigit, v))
+        if len(cleaned_phone) < 8:
+            raise ValueError('Phone number must have at least 8 digits')
+        if len(cleaned_phone) > 15:
+            raise ValueError('Phone number cannot exceed 15 digits')
+        return v.strip()
+    
+    @validator('num_people')
+    def validate_num_people(cls, v):
+        if v < 1:
+            raise ValueError('Number of people must be at least 1')
+        if v > 10:
+            raise ValueError('Number of people cannot exceed 10')
+        return v
 
 
 class ReservationSchema(Schema):
     id: int
     room_id: int
+    room_name: str
     customer_name: str
     customer_email: str
     customer_phone: str
@@ -24,3 +69,11 @@ class ReservationSchema(Schema):
     status: str
     created_at: datetime
     expires_at: datetime
+    
+    @staticmethod
+    def resolve_room_id(obj):
+        return obj.room.id
+    
+    @staticmethod
+    def resolve_room_name(obj):
+        return obj.room.name
