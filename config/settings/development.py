@@ -15,7 +15,7 @@ DEBUG = True
 # Development database (can override base settings if needed)
 # DATABASES['default']['OPTIONS'] = {'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"}
 
-# Development logging
+# Development logging - Console only for simplicity
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -34,11 +34,6 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
         },
-        'file': {
-            'class': 'logging.FileHandler',
-            'filename': 'logs/scheduler.log',
-            'formatter': 'verbose',
-        },
     },
     'root': {
         'handlers': ['console'],
@@ -51,17 +46,17 @@ LOGGING = {
             'propagate': False,
         },
         'escape_rooms_backend': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],
             'level': 'DEBUG',
             'propagate': False,
         },
         'escape_rooms_backend.scheduler': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,
         },
         'apscheduler': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,
         },
