@@ -40,8 +40,7 @@ def cancel_expired_reservations():
             
             if cancelled_count > 0:
                 logger.info(f"Successfully cancelled {cancelled_count} expired reservations")
-            else:
-                logger.debug("No expired reservations found")
+            # Removed debug log for "no expired reservations" to reduce noise
                 
     except Exception as e:
         logger.error(f"Error in cancel_expired_reservations job: {e}")
@@ -69,11 +68,11 @@ def start_scheduler(blocking=False, config=None):
         else:
             scheduler = BackgroundScheduler(scheduler_config)
         
-        # Add job to run every minute
+        # Add job to run every 5 minutes (less frequent for development)
         scheduler.add_job(
             cancel_expired_reservations,
             'interval',
-            minutes=1,
+            minutes=5,
             id='cancel_expired_reservations',
             replace_existing=True,
             max_instances=1,  # Prevent overlapping executions
