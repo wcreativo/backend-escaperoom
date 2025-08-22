@@ -30,7 +30,7 @@ class Command(BaseCommand):
             {
                 'name': 'La Inquisición',
                 'short_description': 'Escapa del sótano de la catedral y libérate de la santa inquisición en este ambiente del año 1700.',
-                'full_description': 'Tú y tus amigos fueron capturados por los monjes y acusados de practicar brujeria. Deberán encontrar la forma de escapar del sótano de la catedral, resolver acertijos misteriosos, descifrar códigos y finalmente librarse de la santa inquisicion. Entre monjes y verdugos, este ambiente que te transporta al año 1700 te espera! Aplica tus poderes de hechicería y escapa lo más rápido posible! Lograrás hacerlo?',
+                'full_description': 'Tú y tus amigos fueron capturados por los monjes y acusados de practicar brujeria. Deberán encontrar la forma de escapar del sótano de la catedral, resolver acertijos misteriosos, descifrar códigos y finalmente librarse de la santa inquisicion. Entre monjes y verdugos, este ambiente que te transporta al año 1700 te espera. ¡Aplica tus poderes de hechicería y escapa lo más rápido posible! ¿Lograrás hacerlo?',
                 'base_price': 30.00,
                 'hero_image_url': f'{frontend_url}/images/inquisicion-hero.jpg',
                 'thumbnail_image_url': f'{frontend_url}/images/inquisicion-thumb.jpg',
