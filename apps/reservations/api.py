@@ -5,6 +5,7 @@ from datetime import datetime, date, time
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 from .models import Reservation
 from .schemas import ReservationCreateSchema, ReservationSchema
 from apps.rooms.models import Room, TimeSlot
@@ -29,9 +30,25 @@ def create_reservation(request, payload: ReservationCreateSchema):
     except ValueError:
         raise HttpError(400, "Invalid date or time format. Use YYYY-MM-DD for date and HH:MM for time")
     
-    # Validate that the date is not in the past
+    # Validate that the date and time are not in the past
+    # Create datetime object for the reservation
+    reservation_datetime = datetime.combine(reservation_date, reservation_time)
+    
+    # If it's a past date, reject
     if reservation_date < date.today():
         raise HttpError(400, "Cannot make reservations for past dates")
+    
+    # If it's today, check if the time is in the future (with 1 hour buffer)
+    if reservation_date == date.today():
+        now = timezone.now()
+        # Add 1 hour buffer for preparation time
+        minimum_time = now + timezone.timedelta(hours=1)
+        
+        # Convert reservation datetime to timezone-aware datetime
+        reservation_datetime_aware = timezone.make_aware(reservation_datetime)
+        
+        if reservation_datetime_aware < minimum_time:
+            raise HttpError(400, "For same-day reservations, please select a time at least 1 hour in advance")
     
     # Validate number of people
     if payload.num_people < 1:
