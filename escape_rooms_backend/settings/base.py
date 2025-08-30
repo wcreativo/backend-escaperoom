@@ -12,14 +12,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # Add apps directory to Python path
 sys.path.insert(0, str(BASE_DIR / 'apps'))
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY')
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=False, cast=bool)
-
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(',')
-
 # Application definition
 DJANGO_APPS = [
     'django.contrib.admin',
@@ -75,13 +67,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'escape_rooms_backend.wsgi.application'
 
-# Database - Default to SQLite
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -127,17 +112,6 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# CORS settings
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
-CORS_ALLOW_CREDENTIALS = True
-
-# Allow all origins in production (Render will handle this)
-if not DEBUG:
-    CORS_ALLOW_ALL_ORIGINS = True
 
 # APScheduler settings - Using memory store for simplicity in production
 SCHEDULER_CONFIG = {

@@ -4,16 +4,26 @@ Development settings for escape_rooms_backend project.
 
 from .base import *
 
-# Development specific settings
-DEBUG = True
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = 'django-insecure-hello-project-development-key-not-for-production'
 
-# Additional development apps (uncomment if you install django_extensions)
-# INSTALLED_APPS += [
-#     'django_extensions',  # Optional: for shell_plus and other dev tools
-# ]
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-# Development database (can override base settings if needed)
-# DATABASES['default']['OPTIONS'] = {'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"}
+# Development CORS (more permissive)
+CORS_ALLOW_ALL_ORIGINS = True
+
+ALLOWED_HOSTS = ['*']
+
+CORS_ALLOW_CREDENTIALS = True
+
+# Database - Default to SQLite
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
 
 # Development logging - Console only for simplicity
 LOGGING = {
@@ -63,5 +73,3 @@ LOGGING = {
     },
 }
 
-# Development CORS (more permissive)
-CORS_ALLOW_ALL_ORIGINS = True
