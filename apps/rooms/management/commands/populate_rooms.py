@@ -15,11 +15,11 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        # Get frontend URL from: 1) argument, 2) environment variable, 3) default
+        # Get frontend URL from: 1) argument, 2) environment variable, 3) default (empty for relative URLs)
         frontend_url = (
             options.get('frontend_url') or 
             os.getenv('FRONTEND_URL') or 
-            'https://tu-frontend.onrender.com'
+            ''  # Use relative URLs by default
         )
         
         # Clear existing rooms
@@ -32,18 +32,18 @@ class Command(BaseCommand):
                 'short_description': 'Escapa del sótano de la catedral y libérate de la santa inquisición en este ambiente del año 1700.',
                 'full_description': 'Tú y tus amigos fueron capturados por los monjes y acusados de practicar brujeria. Deberán encontrar la forma de escapar del sótano de la catedral, resolver acertijos misteriosos, descifrar códigos y finalmente librarse de la santa inquisicion. Entre monjes y verdugos, este ambiente que te transporta al año 1700 te espera. ¡Aplica tus poderes de hechicería y escapa lo más rápido posible! ¿Lograrás hacerlo?',
                 'base_price': 30.00,
-                'hero_image_url': f'{frontend_url}/images/inquisicion-hero.jpg',
-                'thumbnail_image_url': f'{frontend_url}/images/inquisicion-thumb.jpg',
-                'video_url': f'{frontend_url}/videos/inquisicion_audio.mp4',
+                'hero_image_url': f'{frontend_url}/images/inquisicion-hero.jpg' if frontend_url else '/images/inquisicion-hero.jpg',
+                'thumbnail_image_url': f'{frontend_url}/images/inquisicion-thumb.jpg' if frontend_url else '/images/inquisicion-thumb.jpg',
+                'video_url': f'{frontend_url}/videos/inquisicion_audio.mp4' if frontend_url else '/videos/inquisicion_audio.mp4',
             },
             {
                 'name': 'El Purgatorio',
                 'short_description': 'Adéntrate en las profundidades del purgatorio y encuentra tu camino hacia la redención.',
                 'full_description': 'En las profundidades del purgatorio, las almas perdidas buscan su redención. Tú y tu equipo han sido enviados a este lugar entre el cielo y el infierno para completar una misión crucial. Deberán resolver enigmas ancestrales, superar pruebas de fe y encontrar las llaves que les permitirán ascender. El tiempo corre y las fuerzas oscuras no descansan. ¿Podrán purificar sus almas y encontrar el camino hacia la luz?',
                 'base_price': 30.00,
-                'hero_image_url': f'{frontend_url}/images/purgatorio-hero.jpg',
-                'thumbnail_image_url': f'{frontend_url}/images/purgatorio-hero.jpg',
-                'video_url': f'{frontend_url}/videos/purgatorio_audio.mp4',
+                'hero_image_url': f'{frontend_url}/images/purgatorio-hero.jpg' if frontend_url else '/images/purgatorio-hero.jpg',
+                'thumbnail_image_url': f'{frontend_url}/images/purgatorio-hero.jpg' if frontend_url else '/images/purgatorio-hero.jpg',
+                'video_url': f'{frontend_url}/videos/purgatorio_audio.mp4' if frontend_url else '/videos/purgatorio_audio.mp4',
             }
         ]
 
