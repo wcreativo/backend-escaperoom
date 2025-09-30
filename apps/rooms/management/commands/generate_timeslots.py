@@ -34,8 +34,8 @@ class Command(BaseCommand):
             6: (time(10, 0), time(21, 0)),  # Sunday
         }
         
-        # Clear existing time slots
-        TimeSlot.objects.all().delete()
+        # Clear only active time slots, preserve reserved ones
+        TimeSlot.objects.filter(status='active').delete()
         
         rooms = Room.objects.filter(is_active=True)
         if not rooms.exists():
@@ -58,13 +58,19 @@ class Command(BaseCommand):
                 current_time = start_time
                 while current_time < end_time:
                     for room in rooms:
-                        TimeSlot.objects.create(
+                        # Only create slot if it doesn't exist or is not reserved
+                        if not TimeSlot.objects.filter(
                             room=room,
                             date=current_date,
-                            time=current_time,
-                            status='active'
-                        )
-                        slots_created += 1
+                            time=current_time
+                        ).exists():
+                            TimeSlot.objects.create(
+                                room=room,
+                                date=current_date,
+                                time=current_time,
+                                status='active'
+                            )
+                            slots_created += 1
                     
                     # Move to next hour
                     current_hour = current_time.hour + 1
