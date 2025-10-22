@@ -39,7 +39,25 @@ def list_reservations_admin(
     - date_from: Filter reservations from this date (YYYY-MM-DD)
     - date_to: Filter reservations to this date (YYYY-MM-DD)
     """
-    queryset = Reservation.objects.select_related('room', 'time_slot').all()
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        logger.info(f"Admin reservations request - page: {page}, per_page: {per_page}")
+        
+        queryset = Reservation.objects.select_related('room', 'time_slot').all()
+        logger.info(f"Initial queryset count: {queryset.count()}")
+        
+        # Log some sample data to see what we're working with
+        if queryset.exists():
+            sample_reservation = queryset.first()
+            logger.info(f"Sample reservation data: id={sample_reservation.id}, "
+                       f"room={sample_reservation.room.name if sample_reservation.room else 'None'}, "
+                       f"time_slot={sample_reservation.time_slot.id if sample_reservation.time_slot else 'None'}, "
+                       f"status={sample_reservation.status}")
+    except Exception as e:
+        logger.error(f"Error in initial query: {str(e)}")
+        raise HttpError(500, f"Database error: {str(e)}")
     
     # Apply filters
     if status:
@@ -75,20 +93,58 @@ def list_reservations_admin(
     queryset = queryset.order_by('-created_at')
     
     # Paginate results
-    paginator = Paginator(queryset, per_page)
-    
-    if page > paginator.num_pages:
-        raise HttpError(404, "Page not found")
-    
-    page_obj = paginator.get_page(page)
-    
-    return {
-        "reservations": list(page_obj),
-        "total": paginator.count,
-        "page": page,
-        "per_page": per_page,
-        "total_pages": paginator.num_pages
-    }
+    try:
+        paginator = Paginator(queryset, per_page)
+        logger.info(f"Paginator created - total: {paginator.count}, pages: {paginator.num_pages}")
+        
+        if page > paginator.num_pages and paginator.num_pages > 0:
+            logger.warning(f"Page {page} requested but only {paginator.num_pages} pages available")
+            raise HttpError(404, "Page not found")
+        
+        page_obj = paginator.get_page(page)
+        logger.info(f"Page object created - items: {len(page_obj)}")
+        
+        # Try to serialize each reservation to catch data issues
+        reservations_list = []
+        for i, reservation in enumerate(page_obj):
+            try:
+                # Test serialization of individual reservation
+                reservation_data = {
+                    "id": reservation.id,
+                    "room_id": reservation.room.id if reservation.room else None,
+                    "room_name": reservation.room.name if reservation.room else None,
+                    "customer_name": reservation.customer_name,
+                    "customer_email": reservation.customer_email,
+                    "customer_phone": reservation.customer_phone,
+                    "date": reservation.time_slot.date.strftime('%Y-%m-%d') if reservation.time_slot else None,
+                    "time": reservation.time_slot.time.strftime('%H:%M:%S') if reservation.time_slot else None,
+                    "num_people": reservation.num_people,
+                    "total_price": float(reservation.total_price),
+                    "status": reservation.status,
+                    "created_at": reservation.created_at,
+                    "expires_at": reservation.expires_at
+                }
+                reservations_list.append(reservation_data)
+                logger.info(f"Reservation {i+1} serialized successfully: {reservation.id}")
+            except Exception as e:
+                logger.error(f"Error serializing reservation {reservation.id}: {str(e)}")
+                logger.error(f"Reservation data: room={reservation.room}, time_slot={reservation.time_slot}")
+                raise HttpError(500, f"Data serialization error for reservation {reservation.id}: {str(e)}")
+        
+        response_data = {
+            "reservations": reservations_list,
+            "total": paginator.count,
+            "page": page,
+            "per_page": per_page,
+            "total_pages": paginator.num_pages
+        }
+        
+        logger.info(f"Response prepared successfully with {len(reservations_list)} reservations")
+        return response_data
+        
+    except Exception as e:
+        logger.error(f"Error in pagination/serialization: {str(e)}")
+        raise HttpError(500, f"Error processing reservations: {str(e)}")
 
 
 @router.patch("/reservations/{reservation_id}/", response=ReservationSchema, auth=jwt_auth)
