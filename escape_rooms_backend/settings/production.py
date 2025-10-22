@@ -19,6 +19,7 @@ ALLOWED_HOSTS = [
     'escaperooms-backend',  # Allow internal Docker communication
     'localhost',             # Allow localhost access
     '127.0.0.1',            # Allow local IP access
+    '44.207.188.24',        # AWS infrastructure IP (post-outage change)
     # Add your production domains here
 ]
 
