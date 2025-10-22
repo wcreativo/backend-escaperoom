@@ -83,7 +83,7 @@ LOGGING = {
     },
     'root': {
         'handlers': ['console'],
-        'level': 'WARNING',
+        'level': 'INFO',
     },
     'loggers': {
         'django': {
@@ -94,6 +94,11 @@ LOGGING = {
         'api': {
             'handlers': ['console'],
             'level': 'INFO',
+            'propagate': False,
+        },
+        'apps.reservations.admin_api': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
             'propagate': False,
         },
     },
