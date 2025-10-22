@@ -42,6 +42,10 @@ def list_reservations_admin(
     import logging
     logger = logging.getLogger(__name__)
     
+    # Log INMEDIATAMENTE al entrar al endpoint
+    print("=== ADMIN API ENDPOINT CALLED ===")
+    logger.error("=== ADMIN API ENDPOINT CALLED ===")
+    
     try:
         logger.info(f"Admin reservations request - page: {page}, per_page: {per_page}")
         
@@ -191,6 +195,11 @@ def get_reservation_stats(request):
     
     Returns counts by status, revenue, and time-based metrics
     """
+    print("=== STATS ENDPOINT CALLED ===")
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.error("=== STATS ENDPOINT CALLED ===")
+    
     try:
         # Get current date and time boundaries
         now = timezone.now()
