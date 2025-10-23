@@ -59,13 +59,13 @@ class ReservationCreateSchema(Schema):
 
 class ReservationSchema(Schema):
     id: int
-    room_id: int
-    room_name: str
+    room_id: Optional[int]
+    room_name: Optional[str]
     customer_name: str
     customer_email: str
     customer_phone: str
-    date: str
-    time: str
+    date: Optional[str]
+    time: Optional[str]
     num_people: int
     total_price: float
     status: str

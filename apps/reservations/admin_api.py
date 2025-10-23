@@ -112,19 +112,19 @@ def list_reservations_admin(
         reservations_list = []
         for i, reservation in enumerate(page_obj):
             try:
-                # Test serialization of individual reservation
+                # Handle corrupted data gracefully
                 reservation_data = {
                     "id": reservation.id,
                     "room_id": reservation.room.id if reservation.room else None,
-                    "room_name": reservation.room.name if reservation.room else None,
-                    "customer_name": reservation.customer_name,
-                    "customer_email": reservation.customer_email,
-                    "customer_phone": reservation.customer_phone,
-                    "date": reservation.time_slot.date.strftime('%Y-%m-%d') if reservation.time_slot else None,
-                    "time": reservation.time_slot.time.strftime('%H:%M:%S') if reservation.time_slot else None,
-                    "num_people": reservation.num_people,
-                    "total_price": float(reservation.total_price),
-                    "status": reservation.status,
+                    "room_name": reservation.room.name if reservation.room else "DATOS CORRUPTOS",
+                    "customer_name": reservation.customer_name or "N/A",
+                    "customer_email": reservation.customer_email or "N/A",
+                    "customer_phone": reservation.customer_phone or "N/A",
+                    "date": reservation.time_slot.date.strftime('%Y-%m-%d') if reservation.time_slot and reservation.time_slot.date else "N/A",
+                    "time": reservation.time_slot.time.strftime('%H:%M:%S') if reservation.time_slot and reservation.time_slot.time else "N/A",
+                    "num_people": reservation.num_people or 0,
+                    "total_price": float(reservation.total_price) if reservation.total_price else 0.0,
+                    "status": reservation.status or "unknown",
                     "created_at": reservation.created_at,
                     "expires_at": reservation.expires_at
                 }
@@ -133,7 +133,9 @@ def list_reservations_admin(
             except Exception as e:
                 logger.error(f"Error serializing reservation {reservation.id}: {str(e)}")
                 logger.error(f"Reservation data: room={reservation.room}, time_slot={reservation.time_slot}")
-                raise HttpError(500, f"Data serialization error for reservation {reservation.id}: {str(e)}")
+                # Skip corrupted reservations instead of failing completely
+                logger.warning(f"Skipping corrupted reservation {reservation.id}")
+                continue
         
         response_data = {
             "reservations": reservations_list,
