@@ -18,24 +18,6 @@ from apps.authentication.middleware import jwt_auth
 router = Router()
 
 
-@router.get("/debug/", auth=jwt_auth)
-def debug_endpoint(request):
-    """Debug endpoint to test what's happening"""
-    import logging
-    logger = logging.getLogger(__name__)
-    
-    print("=== DEBUG ENDPOINT CALLED ===")
-    print(f"request.GET: {dict(request.GET)}")
-    print(f"request.method: {request.method}")
-    print(f"request.path: {request.path}")
-    
-    logger.error("=== DEBUG ENDPOINT CALLED ===")
-    logger.error(f"request.GET: {dict(request.GET)}")
-    logger.error(f"request.method: {request.method}")
-    logger.error(f"request.path: {request.path}")
-    
-    return {"status": "ok", "params": dict(request.GET)}
-
 
 @router.get("/reservations/", auth=jwt_auth)
 def list_reservations_admin(request):
@@ -51,15 +33,6 @@ def list_reservations_admin(request):
     """
     import logging
     logger = logging.getLogger(__name__)
-    
-    # Log INMEDIATAMENTE al entrar al endpoint con TODOS los parámetros RAW
-    print("=== ADMIN API ENDPOINT CALLED ===")
-    print(f"RAW request.GET: {dict(request.GET)}")
-    print(f"RAW request.GET items: {list(request.GET.items())}")
-    
-    logger.error("=== ADMIN API ENDPOINT CALLED ===")
-    logger.error(f"RAW request.GET: {dict(request.GET)}")
-    logger.error(f"RAW request.GET items: {list(request.GET.items())}")
     
     # Parse parameters manually to avoid Django Ninja validation issues
     try:
@@ -101,24 +74,7 @@ def list_reservations_admin(request):
     if date_to == '':
         date_to = None
     
-    # Log parsed parameters
-    print(f"PARSED PARAMETERS:")
-    print(f"  page: {page} (type: {type(page)})")
-    print(f"  per_page: {per_page} (type: {type(per_page)})")
-    print(f"  status: {status} (type: {type(status)})")
-    print(f"  room_id: {room_id} (type: {type(room_id)})")
-    print(f"  search: {search} (type: {type(search)})")
-    print(f"  date_from: {date_from} (type: {type(date_from)})")
-    print(f"  date_to: {date_to} (type: {type(date_to)})")
-    
-    logger.error(f"PARSED PARAMETERS:")
-    logger.error(f"  page: {page} (type: {type(page)})")
-    logger.error(f"  per_page: {per_page} (type: {type(per_page)})")
-    logger.error(f"  status: {status} (type: {type(status)})")
-    logger.error(f"  room_id: {room_id} (type: {type(room_id)})")
-    logger.error(f"  search: {search} (type: {type(search)})")
-    logger.error(f"  date_from: {date_from} (type: {type(date_from)})")
-    logger.error(f"  date_to: {date_to} (type: {type(date_to)})")
+    logger.info(f"Admin reservations request - page: {page}, per_page: {per_page}, status: {status}")
     
     try:
         logger.info(f"Admin reservations request - page: {page}, per_page: {per_page}")
@@ -226,7 +182,6 @@ def list_reservations_admin(request):
                     "expires_at": safe_get(reservation, 'expires_at')
                 }
                 reservations_list.append(reservation_data)
-                logger.info(f"Reservation {i+1} serialized successfully: {reservation.id}")
             except Exception as e:
                 logger.error(f"Error serializing reservation {reservation.id}: {str(e)}")
                 logger.error(f"Reservation data: room={reservation.room}, time_slot={reservation.time_slot}")
@@ -261,7 +216,7 @@ def list_reservations_admin(request):
             "total_pages": paginator.num_pages
         }
         
-        logger.info(f"Response prepared successfully with {len(reservations_list)} reservations")
+        logger.info(f"Successfully returned {len(reservations_list)} reservations")
         return response_data
         
     except Exception as e:
