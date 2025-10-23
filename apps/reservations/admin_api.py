@@ -112,30 +112,72 @@ def list_reservations_admin(
         reservations_list = []
         for i, reservation in enumerate(page_obj):
             try:
-                # Handle corrupted data gracefully
+                # Handle corrupted data gracefully with safe getters
+                def safe_get(obj, attr, default=None):
+                    try:
+                        value = getattr(obj, attr, default)
+                        return value if value is not None else default
+                    except:
+                        return default
+                
+                def safe_format_date(time_slot):
+                    try:
+                        if time_slot and hasattr(time_slot, 'date') and time_slot.date:
+                            return time_slot.date.strftime('%Y-%m-%d')
+                    except:
+                        pass
+                    return None
+                
+                def safe_format_time(time_slot):
+                    try:
+                        if time_slot and hasattr(time_slot, 'time') and time_slot.time:
+                            return time_slot.time.strftime('%H:%M:%S')
+                    except:
+                        pass
+                    return None
+                
                 reservation_data = {
-                    "id": reservation.id,
-                    "room_id": reservation.room.id if reservation.room else None,
-                    "room_name": reservation.room.name if reservation.room else "DATOS CORRUPTOS",
-                    "customer_name": reservation.customer_name or "N/A",
-                    "customer_email": reservation.customer_email or "N/A",
-                    "customer_phone": reservation.customer_phone or "N/A",
-                    "date": reservation.time_slot.date.strftime('%Y-%m-%d') if reservation.time_slot and reservation.time_slot.date else "N/A",
-                    "time": reservation.time_slot.time.strftime('%H:%M:%S') if reservation.time_slot and reservation.time_slot.time else "N/A",
-                    "num_people": reservation.num_people or 0,
-                    "total_price": float(reservation.total_price) if reservation.total_price else 0.0,
-                    "status": reservation.status or "unknown",
-                    "created_at": reservation.created_at,
-                    "expires_at": reservation.expires_at
+                    "id": safe_get(reservation, 'id', 0),
+                    "room_id": safe_get(reservation.room, 'id') if reservation.room else None,
+                    "room_name": safe_get(reservation.room, 'name', "Sala no disponible") if reservation.room else "Sala no disponible",
+                    "customer_name": safe_get(reservation, 'customer_name', "N/A"),
+                    "customer_email": safe_get(reservation, 'customer_email', "N/A"),
+                    "customer_phone": safe_get(reservation, 'customer_phone', "N/A"),
+                    "date": safe_format_date(reservation.time_slot),
+                    "time": safe_format_time(reservation.time_slot),
+                    "num_people": safe_get(reservation, 'num_people', 0),
+                    "total_price": float(safe_get(reservation, 'total_price', 0)),
+                    "status": safe_get(reservation, 'status', "unknown"),
+                    "created_at": safe_get(reservation, 'created_at'),
+                    "expires_at": safe_get(reservation, 'expires_at')
                 }
                 reservations_list.append(reservation_data)
                 logger.info(f"Reservation {i+1} serialized successfully: {reservation.id}")
             except Exception as e:
                 logger.error(f"Error serializing reservation {reservation.id}: {str(e)}")
                 logger.error(f"Reservation data: room={reservation.room}, time_slot={reservation.time_slot}")
-                # Skip corrupted reservations instead of failing completely
-                logger.warning(f"Skipping corrupted reservation {reservation.id}")
-                continue
+                # Create a minimal safe record for corrupted data
+                try:
+                    safe_record = {
+                        "id": getattr(reservation, 'id', 0),
+                        "room_id": None,
+                        "room_name": "DATOS CORRUPTOS",
+                        "customer_name": "DATOS CORRUPTOS",
+                        "customer_email": "DATOS CORRUPTOS",
+                        "customer_phone": "DATOS CORRUPTOS",
+                        "date": None,
+                        "time": None,
+                        "num_people": 0,
+                        "total_price": 0.0,
+                        "status": "corrupted",
+                        "created_at": None,
+                        "expires_at": None
+                    }
+                    reservations_list.append(safe_record)
+                    logger.warning(f"Added corrupted reservation {reservation.id} with safe defaults")
+                except:
+                    logger.error(f"Completely skipping reservation {reservation.id} - too corrupted")
+                    continue
         
         response_data = {
             "reservations": reservations_list,

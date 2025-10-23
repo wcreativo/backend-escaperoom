@@ -61,16 +61,16 @@ class ReservationSchema(Schema):
     id: int
     room_id: Optional[int]
     room_name: Optional[str]
-    customer_name: str
-    customer_email: str
-    customer_phone: str
+    customer_name: Optional[str]  # Hacer opcional para manejar datos corruptos
+    customer_email: Optional[str]  # Hacer opcional para manejar datos corruptos
+    customer_phone: Optional[str]  # Hacer opcional para manejar datos corruptos
     date: Optional[str]
     time: Optional[str]
-    num_people: int
-    total_price: float
-    status: str
-    created_at: datetime
-    expires_at: datetime
+    num_people: Optional[int]  # Hacer opcional para manejar datos corruptos
+    total_price: Optional[float]  # Hacer opcional para manejar datos corruptos
+    status: Optional[str]  # Hacer opcional para manejar datos corruptos
+    created_at: Optional[datetime]  # Hacer opcional para manejar datos corruptos
+    expires_at: Optional[datetime]  # Hacer opcional para manejar datos corruptos
     
     @staticmethod
     def resolve_room_id(obj):
