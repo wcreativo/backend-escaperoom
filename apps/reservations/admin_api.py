@@ -18,7 +18,7 @@ from apps.authentication.middleware import jwt_auth
 router = Router()
 
 
-@router.get("/reservations/", response=ReservationListSchema, auth=jwt_auth)
+@router.get("/reservations/", auth=jwt_auth)
 def list_reservations_admin(
     request,
     page: int = Query(1, ge=1),
