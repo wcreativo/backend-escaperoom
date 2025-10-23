@@ -18,17 +18,27 @@ from apps.authentication.middleware import jwt_auth
 router = Router()
 
 
+@router.get("/debug/", auth=jwt_auth)
+def debug_endpoint(request):
+    """Debug endpoint to test what's happening"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    print("=== DEBUG ENDPOINT CALLED ===")
+    print(f"request.GET: {dict(request.GET)}")
+    print(f"request.method: {request.method}")
+    print(f"request.path: {request.path}")
+    
+    logger.error("=== DEBUG ENDPOINT CALLED ===")
+    logger.error(f"request.GET: {dict(request.GET)}")
+    logger.error(f"request.method: {request.method}")
+    logger.error(f"request.path: {request.path}")
+    
+    return {"status": "ok", "params": dict(request.GET)}
+
+
 @router.get("/reservations/", auth=jwt_auth)
-def list_reservations_admin(
-    request,
-    page: int = Query(1, ge=1),
-    per_page: int = Query(20, ge=1, le=100),
-    status: Optional[str] = Query(None),
-    room_id: Optional[int] = Query(None),
-    search: Optional[str] = Query(None),
-    date_from: Optional[str] = Query(None),
-    date_to: Optional[str] = Query(None)
-):
+def list_reservations_admin(request):
     """
     List all reservations with filtering and pagination (admin only)
     
@@ -42,9 +52,73 @@ def list_reservations_admin(
     import logging
     logger = logging.getLogger(__name__)
     
-    # Log INMEDIATAMENTE al entrar al endpoint
+    # Log INMEDIATAMENTE al entrar al endpoint con TODOS los parámetros RAW
     print("=== ADMIN API ENDPOINT CALLED ===")
+    print(f"RAW request.GET: {dict(request.GET)}")
+    print(f"RAW request.GET items: {list(request.GET.items())}")
+    
     logger.error("=== ADMIN API ENDPOINT CALLED ===")
+    logger.error(f"RAW request.GET: {dict(request.GET)}")
+    logger.error(f"RAW request.GET items: {list(request.GET.items())}")
+    
+    # Parse parameters manually to avoid Django Ninja validation issues
+    try:
+        page = int(request.GET.get('page', 1))
+        if page < 1:
+            page = 1
+    except (ValueError, TypeError):
+        page = 1
+        
+    try:
+        per_page = int(request.GET.get('per_page', 20))
+        if per_page < 1:
+            per_page = 20
+        elif per_page > 100:
+            per_page = 100
+    except (ValueError, TypeError):
+        per_page = 20
+        
+    status = request.GET.get('status', None)
+    if status == '':
+        status = None
+        
+    try:
+        room_id = request.GET.get('room_id', None)
+        if room_id:
+            room_id = int(room_id)
+    except (ValueError, TypeError):
+        room_id = None
+        
+    search = request.GET.get('search', None)
+    if search == '':
+        search = None
+        
+    date_from = request.GET.get('date_from', None)
+    if date_from == '':
+        date_from = None
+        
+    date_to = request.GET.get('date_to', None)
+    if date_to == '':
+        date_to = None
+    
+    # Log parsed parameters
+    print(f"PARSED PARAMETERS:")
+    print(f"  page: {page} (type: {type(page)})")
+    print(f"  per_page: {per_page} (type: {type(per_page)})")
+    print(f"  status: {status} (type: {type(status)})")
+    print(f"  room_id: {room_id} (type: {type(room_id)})")
+    print(f"  search: {search} (type: {type(search)})")
+    print(f"  date_from: {date_from} (type: {type(date_from)})")
+    print(f"  date_to: {date_to} (type: {type(date_to)})")
+    
+    logger.error(f"PARSED PARAMETERS:")
+    logger.error(f"  page: {page} (type: {type(page)})")
+    logger.error(f"  per_page: {per_page} (type: {type(per_page)})")
+    logger.error(f"  status: {status} (type: {type(status)})")
+    logger.error(f"  room_id: {room_id} (type: {type(room_id)})")
+    logger.error(f"  search: {search} (type: {type(search)})")
+    logger.error(f"  date_from: {date_from} (type: {type(date_from)})")
+    logger.error(f"  date_to: {date_to} (type: {type(date_to)})")
     
     try:
         logger.info(f"Admin reservations request - page: {page}, per_page: {per_page}")
