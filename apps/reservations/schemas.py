@@ -142,3 +142,15 @@ class ReservationDateTimeUpdateSchema(Schema):
         except ValueError:
             raise ValueError('Invalid time format. Use HH:MM')
         return v.strip()
+
+
+class ReservationPeopleUpdateSchema(Schema):
+    num_people: int
+    
+    @validator('num_people')
+    def validate_num_people(cls, v):
+        if v < 1:
+            raise ValueError('Number of people must be at least 1')
+        if v > 10:
+            raise ValueError('Number of people cannot exceed 10')
+        return v

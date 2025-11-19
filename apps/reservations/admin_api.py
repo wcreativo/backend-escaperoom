@@ -13,7 +13,8 @@ from .schemas import (
     ReservationUpdateSchema,
     ReservationListSchema,
     ReservationStatsSchema,
-    ReservationDateTimeUpdateSchema
+    ReservationDateTimeUpdateSchema,
+    ReservationPeopleUpdateSchema
 )
 from apps.authentication.middleware import jwt_auth
 
@@ -331,6 +332,46 @@ def update_reservation_datetime(request, reservation_id: int, payload: Reservati
         logger.info(f"Reservation {reservation_id} rescheduled from {old_time_slot.date} {old_time_slot.time} to {new_date} {new_time}")
     
     # Refresh from database to get updated relationships
+    reservation.refresh_from_db()
+    return reservation
+
+
+@router.patch("/reservations/{reservation_id}/people/", response=ReservationSchema, auth=jwt_auth)
+def update_reservation_people(request, reservation_id: int, payload: ReservationPeopleUpdateSchema):
+    """
+    Update number of people in a reservation (admin only)
+    
+    Only allows increasing the number of people, not decreasing.
+    Automatically recalculates the total price based on pricing rules.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    reservation = get_object_or_404(Reservation, id=reservation_id)
+    
+    old_num_people = reservation.num_people
+    new_num_people = payload.num_people
+    
+    # Validate that we're only increasing, not decreasing
+    if new_num_people < old_num_people:
+        raise HttpError(400, f"Cannot decrease number of people. Current: {old_num_people}, Requested: {new_num_people}")
+    
+    # If same number, no change needed
+    if new_num_people == old_num_people:
+        return reservation
+    
+    # Update number of people
+    reservation.num_people = new_num_people
+    
+    # Recalculate total price using the model's method
+    reservation.total_price = reservation.calculate_total_price()
+    
+    # Save with update_fields to avoid validation issues
+    reservation.save(update_fields=['num_people', 'total_price'])
+    
+    logger.info(f"Reservation {reservation_id} updated: {old_num_people} -> {new_num_people} people, new total: ${reservation.total_price}")
+    
+    # Refresh from database
     reservation.refresh_from_db()
     return reservation
 
