@@ -74,7 +74,12 @@ def list_reservations_admin(request):
     if date_to == '':
         date_to = None
     
-    logger.info(f"Admin reservations request - page: {page}, per_page: {per_page}, status: {status}")
+    # New parameter for filtering by time period (active/past)
+    time_filter = request.GET.get('time_filter', None)
+    if time_filter == '':
+        time_filter = None
+    
+    logger.info(f"Admin reservations request - page: {page}, per_page: {per_page}, status: {status}, time_filter: {time_filter}")
     
     try:
         logger.info(f"Admin reservations request - page: {page}, per_page: {per_page}")
@@ -123,8 +128,23 @@ def list_reservations_admin(request):
         except ValueError:
             raise HttpError(400, "Invalid date_to format. Use YYYY-MM-DD")
     
-    # Order by creation date (newest first)
-    queryset = queryset.order_by('-created_at')
+    # Filter by time period (active = today and future, past = before today)
+    from datetime import date as date_class
+    today = date_class.today()
+    
+    if time_filter == 'active':
+        # Reservations from today onwards
+        queryset = queryset.filter(time_slot__date__gte=today)
+        # Order ascending (nearest first)
+        queryset = queryset.order_by('time_slot__date', 'time_slot__time')
+    elif time_filter == 'past':
+        # Reservations before today
+        queryset = queryset.filter(time_slot__date__lt=today)
+        # Order descending (most recent first)
+        queryset = queryset.order_by('-time_slot__date', '-time_slot__time')
+    else:
+        # No time filter - show all, ordered by date ascending (nearest first)
+        queryset = queryset.order_by('time_slot__date', 'time_slot__time')
     
     # Paginate results
     try:
