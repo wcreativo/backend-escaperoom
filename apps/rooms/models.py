@@ -44,12 +44,24 @@ class TimeSlot(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ['room', 'date', 'time']
         ordering = ['date', 'time']
         indexes = [
             models.Index(fields=['room', 'date']),
             models.Index(fields=['status']),
             models.Index(fields=['date', 'time']),
+        ]
+        constraints = [
+            # Unique constraint for active time slots only
+            models.UniqueConstraint(
+                fields=['room', 'date', 'time', 'status'],
+                condition=models.Q(status='active') | models.Q(status='reserved'),
+                name='unique_active_timeslot'
+            ),
+            # Basic unique constraint for room, date, time combination
+            models.UniqueConstraint(
+                fields=['room', 'date', 'time'],
+                name='unique_room_datetime'
+            ),
         ]
 
     def __str__(self):

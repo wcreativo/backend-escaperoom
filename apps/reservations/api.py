@@ -70,9 +70,21 @@ def create_reservation(request, payload: ReservationCreateSchema):
     if time_slot.status != 'active':
         raise HttpError(400, "The selected time slot is not available")
     
-    # Use database transaction to ensure atomicity
+    # Use database transaction with SELECT FOR UPDATE to prevent race conditions
     try:
         with transaction.atomic():
+            # Lock the time slot to prevent concurrent reservations
+            time_slot = TimeSlot.objects.select_for_update().get(
+                room=room,
+                date=reservation_date,
+                time=reservation_time,
+                status='active'  # Only lock if still active
+            )
+            
+            # Double-check availability after acquiring lock
+            if time_slot.status != 'active':
+                raise HttpError(400, "The selected time slot is no longer available")
+            
             # Create the reservation
             reservation = Reservation(
                 room=room,
@@ -92,6 +104,8 @@ def create_reservation(request, payload: ReservationCreateSchema):
             
             return reservation
             
+    except TimeSlot.DoesNotExist:
+        raise HttpError(400, "The selected time slot is no longer available")
     except ValidationError as e:
         raise HttpError(400, f"Validation error: {str(e)}")
     except Exception as e:

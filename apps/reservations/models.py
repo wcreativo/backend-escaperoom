@@ -86,11 +86,26 @@ class Reservation(models.Model):
         return self.num_people * price_per_person
 
     def cancel_reservation(self):
-        """Cancel the reservation and free up the time slot"""
-        if self.status != 'cancelled':
-            self.status = 'cancelled'
-            if self.time_slot:
-                self.time_slot.status = 'active'
-                self.time_slot.save()
-            # Use update_fields to avoid triggering full_clean validation
-            self.save(update_fields=['status'])
+        """Cancel the reservation and free up the time slot atomically"""
+        from django.db import transaction
+        
+        if self.status == 'cancelled':
+            return  # Already cancelled
+            
+        with transaction.atomic():
+            # Lock both objects to prevent race conditions
+            reservation = Reservation.objects.select_for_update().get(id=self.id)
+            
+            if reservation.status != 'cancelled':
+                reservation.status = 'cancelled'
+                
+                if reservation.time_slot:
+                    time_slot = TimeSlot.objects.select_for_update().get(id=reservation.time_slot.id)
+                    time_slot.status = 'active'
+                    time_slot.save(update_fields=['status'])
+                
+                # Use update_fields to avoid triggering full_clean validation
+                reservation.save(update_fields=['status'])
+                
+                # Update the current instance
+                self.status = 'cancelled'
