@@ -6,12 +6,14 @@ from django.shortcuts import get_object_or_404
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum
 from django.utils import timezone
+from django.db import transaction
 from .models import Reservation
 from .schemas import (
     ReservationSchema, 
     ReservationUpdateSchema,
     ReservationListSchema,
-    ReservationStatsSchema
+    ReservationStatsSchema,
+    ReservationDateTimeUpdateSchema
 )
 from apps.authentication.middleware import jwt_auth
 
@@ -242,6 +244,95 @@ def list_reservations_admin(request):
     except Exception as e:
         logger.error(f"Error in pagination/serialization: {str(e)}")
         raise HttpError(500, f"Error processing reservations: {str(e)}")
+
+
+# IMPORTANT: More specific routes must come BEFORE more general routes
+# /reservations/{id}/reschedule/ must be before /reservations/{id}/
+@router.patch("/reservations/{reservation_id}/reschedule/", response=ReservationSchema, auth=jwt_auth)
+def update_reservation_datetime(request, reservation_id: int, payload: ReservationDateTimeUpdateSchema):
+    """
+    Update reservation date and time (admin only)
+    
+    Allows changing the reservation to a different date/time slot.
+    Automatically frees the old time slot and reserves the new one.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    from apps.rooms.models import TimeSlot
+    
+    reservation = get_object_or_404(Reservation, id=reservation_id)
+    
+    # Get new date and time from payload
+    new_date_str = payload.date
+    new_time_str = payload.time
+    
+    # Parse date and time
+    try:
+        new_date = datetime.strptime(new_date_str, "%Y-%m-%d").date()
+        new_time = datetime.strptime(new_time_str, "%H:%M").time()
+    except ValueError:
+        raise HttpError(400, "Invalid date or time format. Use YYYY-MM-DD for date and HH:MM for time")
+    
+    # Validate that the new date/time is not in the past
+    from datetime import date as date_class
+    today = date_class.today()
+    
+    if new_date < today:
+        raise HttpError(400, "Cannot reschedule to a past date")
+    
+    if new_date == today:
+        now = timezone.now()
+        minimum_time = now + timezone.timedelta(hours=1)
+        new_datetime_aware = timezone.make_aware(datetime.combine(new_date, new_time))
+        
+        if new_datetime_aware < minimum_time:
+            raise HttpError(400, "For same-day changes, please select a time at least 1 hour in advance")
+    
+    # Find the new time slot
+    try:
+        new_time_slot = TimeSlot.objects.get(
+            room=reservation.room,
+            date=new_date,
+            time=new_time
+        )
+    except TimeSlot.DoesNotExist:
+        raise HttpError(404, "Time slot not found for the specified date and time")
+    
+    # Check if new time slot is available
+    if new_time_slot.status != 'active':
+        raise HttpError(400, "The selected time slot is not available")
+    
+    # Use transaction to ensure atomicity
+    with transaction.atomic():
+        # Get old time slot
+        old_time_slot = reservation.time_slot
+        
+        # Lock both time slots
+        old_time_slot = TimeSlot.objects.select_for_update().get(id=old_time_slot.id)
+        new_time_slot = TimeSlot.objects.select_for_update().get(id=new_time_slot.id)
+        
+        # Double-check new slot is still available
+        if new_time_slot.status != 'active':
+            raise HttpError(400, "The selected time slot is no longer available")
+        
+        # Free the old time slot
+        old_time_slot.status = 'active'
+        old_time_slot.save()
+        
+        # Reserve the new time slot
+        new_time_slot.status = 'reserved'
+        new_time_slot.save()
+        
+        # Update the reservation - use update_fields to skip validation
+        reservation.time_slot = new_time_slot
+        reservation.save(update_fields=['time_slot'])
+        
+        logger.info(f"Reservation {reservation_id} rescheduled from {old_time_slot.date} {old_time_slot.time} to {new_date} {new_time}")
+    
+    # Refresh from database to get updated relationships
+    reservation.refresh_from_db()
+    return reservation
 
 
 @router.patch("/reservations/{reservation_id}/", response=ReservationSchema, auth=jwt_auth)

@@ -117,3 +117,28 @@ class ReservationStatsSchema(Schema):
     today_reservations: int
     this_week_reservations: int
     this_month_reservations: int
+
+
+class ReservationDateTimeUpdateSchema(Schema):
+    date: str  # Format: YYYY-MM-DD
+    time: str  # Format: HH:MM
+    
+    @validator('date')
+    def validate_date(cls, v):
+        if not v or not v.strip():
+            raise ValueError('Date is required')
+        try:
+            datetime.strptime(v, '%Y-%m-%d')
+        except ValueError:
+            raise ValueError('Invalid date format. Use YYYY-MM-DD')
+        return v.strip()
+    
+    @validator('time')
+    def validate_time(cls, v):
+        if not v or not v.strip():
+            raise ValueError('Time is required')
+        try:
+            datetime.strptime(v, '%H:%M')
+        except ValueError:
+            raise ValueError('Invalid time format. Use HH:MM')
+        return v.strip()
